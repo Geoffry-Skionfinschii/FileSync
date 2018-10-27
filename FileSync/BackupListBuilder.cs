@@ -130,6 +130,7 @@ namespace FileSync
                     scannedItems++;
                     Program.BACKUP_PROGRESS = (scannedItems * 100) / totalItems;
                     dat.Add(backup);
+                    Program.BACKUP_STATE = "Collecting file data... (" + dat.Count + ")";
                 }
 
             } catch (System.UnauthorizedAccessException)

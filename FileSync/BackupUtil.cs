@@ -69,6 +69,12 @@ namespace FileSync
                         totalBytes = inputStream.Length;
                         while ((inBuffer = inputStream.Read(buffer, 0, buffer.Length)) > 0)
                         {
+                            if(Program.TERMINATE_BACKUP)
+                            {
+                                zipStream.Close();
+                                return false;
+                            }
+
                             bytesRead += inBuffer;
                             BACKUP_PROGRESS_CURRENTFILE = (int)((bytesRead * 100) / totalBytes);
                             zipStream.Write(buffer, 0, inBuffer);
@@ -126,6 +132,11 @@ namespace FileSync
             long bytesRead = 0;
             while(bytesToRead > 0)
             {
+                if (Program.TERMINATE_BACKUP)
+                {
+                    stream.Close();
+                    return 0;
+                }
                 int len = stream.Read(buffer, 0, buffer.Length);
                 bytesRead += len;
                 bytesToRead -= len;

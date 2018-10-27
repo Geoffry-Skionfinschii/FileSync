@@ -17,7 +17,7 @@ namespace FileSync
             InitializeComponent();
 
             Timer timer = new Timer();
-            timer.Interval = 1;
+            timer.Interval = 100;
 
             timer.Tick += (delegate {
                 if(IsDisposed)
