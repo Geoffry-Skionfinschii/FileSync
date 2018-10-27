@@ -50,6 +50,8 @@ namespace FileSync
         private void LoadDriveList()
         {
             driveListView.Nodes.Clear();
+            Dictionary<string, TreeNode> nodes = new Dictionary<string, TreeNode>();
+
             foreach (KeyValuePair<DriveInfo,DriveBackupData> dat in Program.driveDataList)
             {
                 DriveBackupData driveDat = dat.Value;
@@ -73,9 +75,21 @@ namespace FileSync
                     tmp2.Text = "No synced folders found";
                     tmp.Nodes.Add(tmp2);
                 }
-                driveListView.Nodes.Add(tmp);
+
+                if(!nodes.ContainsKey(Program.VALID_DRIVE_TYPES[drive.DriveType]))
+                {
+                    TreeNode driveType = new TreeNode(Program.VALID_DRIVE_TYPES[drive.DriveType]);
+                    nodes.Add(Program.VALID_DRIVE_TYPES[drive.DriveType], driveType);
+                }
+
+                TreeNode typeNode = nodes[Program.VALID_DRIVE_TYPES[drive.DriveType]];
+                typeNode.Nodes.Add(tmp);
             }
 
+            foreach(TreeNode node in nodes.Values)
+            {
+                driveListView.Nodes.Add(node);
+            }
             driveListView.ExpandAll();
             UpdateUIData();
         }
@@ -305,13 +319,17 @@ namespace FileSync
             if(res == DialogResult.OK && !string.IsNullOrWhiteSpace(setBackupLocationBrowser.SelectedPath))
             {
                 //Create file and initial setup.
-
+                if(setBackupLocationBrowser.SelectedPath.Substring(0, 3) == selectedDrive.RootDirectory.FullName)
+                {
+                    MessageBox.Show("Error: Cannot output backup to drive being backed up.");
+                    return;
+                }
                 DriveBackupData tmp = Program.driveDataList[selectedDrive];
                 tmp.backupDataExists = true;
                 tmp.defaultBackupLocation = setBackupLocationBrowser.SelectedPath;
                 Program.driveDataList[selectedDrive] = tmp;
                 Program.SaveDriveData(tmp);
-
+                Program.SetupBackupLocation(setBackupLocationBrowser.SelectedPath);
                 MessageBox.Show("Backup system has been set up for " + selectedDrive.Name, "Setup Complete");
             }
 
@@ -421,10 +439,16 @@ namespace FileSync
 
             if (res == DialogResult.OK && !string.IsNullOrWhiteSpace(setBackupLocationBrowser.SelectedPath))
             {
+                if (setBackupLocationBrowser.SelectedPath.Substring(0,3) == selectedDrive.RootDirectory.FullName)
+                {
+                    MessageBox.Show("Error: Cannot output backup to drive being backed up.");
+                    return;
+                }
                 DriveBackupData tmp = Program.driveDataList[selectedDrive];
                 tmp.defaultBackupLocation = setBackupLocationBrowser.SelectedPath;
                 Program.driveDataList[selectedDrive] = tmp;
                 Program.SaveDriveData(tmp);
+                Program.SetupBackupLocation(setBackupLocationBrowser.SelectedPath);
             }
 
             LoadDriveList();
@@ -474,6 +498,11 @@ namespace FileSync
         private void driveListView_BeforeCollapse(object sender, TreeViewCancelEventArgs e)
         {
             e.Cancel = true;
+        }
+
+        private void progressToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Program.OpenProgressWindow();
         }
     }
 }

@@ -87,6 +87,13 @@ namespace FileSync
 
         public static bool TERMINATE_BACKUP = false;
 
+        public static Dictionary<DriveType, string> VALID_DRIVE_TYPES = new Dictionary<DriveType, string>()
+        {
+            {DriveType.Fixed, "HDD" },
+            {DriveType.Network, "Network" },
+            {DriveType.Removable, "External Storage" },
+        };
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -182,7 +189,7 @@ namespace FileSync
 
         private static void RefreshDataSet()
         {
-            var driveList = DriveInfo.GetDrives().Where(drive => drive.IsReady && drive.DriveType == DriveType.Removable);
+            var driveList = DriveInfo.GetDrives().Where(drive => drive.IsReady && VALID_DRIVE_TYPES.ContainsKey(drive.DriveType));
 
             foreach (DriveInfo drive in driveList)
             {
@@ -257,6 +264,11 @@ namespace FileSync
             {
                 MessageBox.Show("Error: " + e.Message);
             }
+        }
+
+        public static void SetupBackupLocation(string path)
+        {
+            File.WriteAllBytes(path + "\\identity.filesync", new byte[0]);
         }
 
         public static async Task<bool> StartBackup(DriveBackupData drive)
