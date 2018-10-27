@@ -44,6 +44,8 @@ namespace FileSync
             return files.FirstOrDefault();
         }
 
+        public static int COMPRESSION_BYTE_MIN = 150;
+
         public static bool BackupFile(BackupData dat, DriveBackupData drive)
         {
             try
@@ -52,25 +54,31 @@ namespace FileSync
                 DirectoryInfo inf = Directory.CreateDirectory(pathDir);
                 //Debug.WriteLine(inf.FullName);
                 string safeTime = GetSafeTime(DateTime.Now);
-                byte[] buffer = new byte[4096];
+                byte[] buffer = new byte[16*4096];
                 int inBuffer;
                 long bytesRead = 0;
                 long totalBytes;
-                using (var inputStream = new FileStream(dat.path + "\\" + dat.filename, FileMode.Open))
+                using (var inputStream = new FileStream(dat.path + "\\" + dat.filename, FileMode.Open,FileAccess.Read,FileShare.None,buffer.Length * 2))
                 using (var outputStream = File.Create(pathDir + safeTime + ".filesync"))
-                using (GZipStream zipStream = new GZipStream(outputStream, CompressionMode.Compress))
                 {
-                    totalBytes = inputStream.Length;
-                    while((inBuffer = inputStream.Read(buffer,0,buffer.Length)) > 0) {
-                        bytesRead += inBuffer;
-                        BACKUP_PROGRESS_CURRENTFILE = (int)((bytesRead * 100) / totalBytes);
-                        zipStream.Write(buffer, 0, inBuffer);
+                    long fileSize = inputStream.Length;
+                    CompressionLevel compMode = fileSize < COMPRESSION_BYTE_MIN ? CompressionLevel.NoCompression : CompressionLevel.Optimal;
+                    Debug.WriteLineIf(compMode == CompressionLevel.NoCompression, "NOCOMPRESSION: " + fileSize);
+                    using (GZipStream zipStream = new GZipStream(outputStream, compMode))
+                    {
+                        totalBytes = inputStream.Length;
+                        while ((inBuffer = inputStream.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            bytesRead += inBuffer;
+                            BACKUP_PROGRESS_CURRENTFILE = (int)((bytesRead * 100) / totalBytes);
+                            zipStream.Write(buffer, 0, inBuffer);
+                        }
+
+                        zipStream.Close();
+
+                        File.WriteAllBytes(pathDir + safeTime + ".filesync" + ".hash", BitConverter.GetBytes(dat.fileHash));
+
                     }
-
-                    zipStream.Close();
-
-                    File.WriteAllBytes(pathDir + safeTime + ".filesync" + ".hash", BitConverter.GetBytes(dat.fileHash));
-
                 }
 
                 return true;

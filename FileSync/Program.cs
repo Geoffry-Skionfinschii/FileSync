@@ -226,9 +226,7 @@ namespace FileSync
                     {
                         if (!Properties.Settings.Default.AskBeforeBackup)
                         {
-                            new Task(async () => {
-                                await StartBackup(driveDat);
-                            }).Start();
+                            StartBackup(driveDat);
                         }
                         else
                         {
@@ -269,7 +267,7 @@ namespace FileSync
                 ShowNotification("Backup Started", "A backup has started for " + drive.drive.Name + "...");
                 if (Properties.Settings.Default.ShowProgress)
                 {
-                    OpenProgressWindow();
+                    new MethodInvoker(delegate { OpenProgressWindow(); }).Invoke();
                 }
                 BACKUP_DRIVE = drive.drive.Name;
                 BACKUP_PROGRESS = 0;
